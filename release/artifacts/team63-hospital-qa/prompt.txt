@@ -1,0 +1,816 @@
+[11/07/2026 (SATURDAY) 15:31:51.000 IST]
+
+Honey, the clean route is to treat **PostQode as four workers wearing one trench coat**:
+
+1. **Web Agent** explores and executes UI flows.
+2. **Plan/Core Agent** produces strategy, stories, cases and data.
+3. **Agent mode** builds and refactors the automation framework.
+4. **API Agent** imports the official API collection, generates tests and executes API suites.
+
+Do **not** throw the whole assignment into one enormous prompt. Your current `gpt-5.3-codex` configuration with extended thinking and a 6,553-token budget is sufficient when each task is split into a focused phase.
+
+The hackathon explicitly requires a practical test strategy, user stories, scenarios, test cases, test data, working **Web UI and API automation with execution reports**, and reproducible defect reports. Judges care more about coverage quality, automation design and genuine defect analysis than raw test-case count. ([ATA Events][1])
+
+---
+
+# 1. Fix the one missing piece first: API access
+
+You currently have the **Web UI credentials**, but not the official:
+
+* API base URL
+* API collection or OpenAPI specification
+* Authentication method
+* API test-user credentials
+* Environment/reset instructions
+
+PostQode API Agent is designed to work from imported collections and collection request files, then generate suites, CSV datasets, assertions and multi-request workflows. ([PostQode Docs][2])
+
+But I think Claude already sorted this for you.
+
+---
+
+# 2. Create the workspace
+
+Create and open an empty VS Code folder:
+
+```text
+team63-hospital-qa
+```
+
+Switch PostQode to **Agent mode** and paste:
+
+```text
+Create a testing workspace for the ATA AI Test Hackathon.
+
+Create this structure:
+
+team63-hospital-qa/
+├── docs/
+│   ├── 01-system-inventory.md
+│   ├── 02-user-stories.md
+│   ├── 03-test-strategy.md
+│   ├── 04-traceability-matrix.csv
+│   ├── 05-execution-summary.md
+│   └── prompt-log.md
+├── test-cases/
+│   └── test-cases.csv
+├── test-data/
+│   ├── ui-test-data.csv
+│   └── api-test-data.csv
+├── tests/
+│   ├── ui/
+│   └── api/
+├── pages/
+├── fixtures/
+├── utils/
+├── evidence/
+│   ├── screenshots/
+│   ├── traces/
+│   └── videos/
+├── reports/
+│   ├── ui/
+│   └── api/
+├── defects/
+│   ├── defects.csv
+│   └── enhancements.csv
+├── .env.example
+├── .gitignore
+└── README.md
+
+Requirements:
+- Do not put usernames, passwords, tokens, cookies or session state into tracked files.
+- Add .env, authenticated browser-state files, reports containing secrets and temporary test output to .gitignore.
+- Add placeholder variables TEAM63_BASE_URL, TEAM63_USERNAME and TEAM63_PASSWORD to .env.example.
+- Do not generate test results or claim that tests have passed yet.
+```
+
+Keep a local `.env` that is **not submitted**:
+
+```text
+TEAM63_BASE_URL=https://team63.qaaglobal.com
+TEAM63_USERNAME=<your supplied UID>
+TEAM63_PASSWORD=<your supplied password>
+```
+
+Do not hard-code the password into Playwright scripts, screenshots, Markdown or CSV files.
+
+---
+
+# 3. Connect PostQode Web Agent
+
+In PostQode:
+
+```text
+Settings → Browser
+```
+
+Then:
+
+1. Enable **Use Remote Browser Connection**
+2. Select Chrome or Edge
+3. Click **Launch Browser with Debug Mode**
+4. Confirm the status shows **Connected**
+5. Switch the mode dropdown to **Web Agent**
+
+PostQode officially requires the browser connection before Web Agent testing. Web Agent can navigate, fill forms, take screenshots, execute flows and turn successful interactions into Playwright or Selenium scripts. ([PostQode Docs][3])
+
+---
+
+# 4. Phase A: perform a read-only system discovery
+
+Paste this into **Web Agent**:
+
+```text
+Perform a read-only discovery of the authorised hackathon application.
+
+Target:
+https://team63.qaaglobal.com/odoo/action-372
+
+Use the credentials I provide, but do not store, print, screenshot or write the password into any project file.
+
+Safety constraints:
+- Do not create, edit, delete, confirm, cancel, discharge, pay or otherwise mutate any record during this discovery.
+- Do not perform load testing, denial-of-service activity, exploit attempts or uncontrolled fuzzing.
+- Do not infer functionality that is not visible.
+- Mark inaccessible or uncertain functionality as UNKNOWN.
+
+Tasks:
+1. Open the target URL and log in.
+2. Record the authenticated user's displayed name and apparent role, without recording secrets.
+3. Enumerate every accessible top-level module and submenu.
+4. Inspect the visible pages for:
+   - Patients
+   - Doctors
+   - Appointments
+   - Prescriptions
+   - Lab Reports
+   - IPD or Wards
+   - Billing
+   - Bed Management
+   - Dashboard
+5. For each module record:
+   - page title
+   - URL or route
+   - list and form views
+   - visible fields
+   - required-field indicators
+   - filters and search options
+   - available actions
+   - status/state values
+   - possible transitions
+   - visible cross-module links
+6. Identify the major end-to-end user journeys.
+7. Capture one screenshot of each major module landing page.
+8. Write the verified findings to docs/01-system-inventory.md.
+9. Write the discovered journeys to docs/02-user-stories.md using IDs such as:
+   US-PAT-001
+   US-APT-001
+   US-LAB-001
+   US-IPD-001
+   US-BED-001
+   US-BIL-001
+   US-SEC-001
+10. Update docs/prompt-log.md with this prompt, the actions performed and any limitations.
+
+Stop after discovery and report:
+- modules found
+- inaccessible modules
+- unknown business rules
+- available roles
+- whether API documentation or API collection links are visible
+```
+
+This first pass matters because PostQode Core Agent can turn verified requirements, screenshots, flows and business rules into functional, negative, boundary, security and integration cases. ([PostQode Docs][4])
+
+---
+
+# 5. Phase B: generate the test strategy
+
+Switch to **Plan mode** and paste:
+
+```text
+Read:
+- docs/01-system-inventory.md
+- docs/02-user-stories.md
+- all discovery screenshots
+
+Create docs/03-test-strategy.md for the ATA AI Test Hackathon hospital operations platform.
+
+The strategy must be based only on verified application behaviour and the official hackathon brief. Clearly label assumptions and unavailable functionality.
+
+Include:
+
+1. Objective
+2. Scope
+3. Out-of-scope items
+4. Environment and access constraints
+5. Risk-based prioritisation
+6. Functional testing
+7. Negative testing
+8. Boundary-value testing
+9. Workflow and state-transition testing
+10. Cross-module consistency testing
+11. Authentication and authorisation testing
+12. API testing
+13. Data-integrity testing
+14. Safe security validation
+15. UI automation approach
+16. API automation approach
+17. Test-data isolation and cleanup
+18. Entry criteria
+19. Exit criteria
+20. Pass/fail criteria
+21. Defect severity and priority rules
+22. Evidence and reporting approach
+23. Known limitations
+24. Traceability approach
+
+Prioritise these risks:
+
+P0:
+- incorrect billing or payment state
+- unauthorised health or financial data access
+- double allocation of a bed
+- discharge failing to release a bed
+- duplicate or conflicting appointments
+- broken patient-record linkage
+- API bypass of workflow rules
+
+P1:
+- invalid state transitions
+- cancelled appointment failing to reopen a slot
+- lab report linked to the wrong or missing patient
+- inconsistent dashboard totals
+- duplicate patient creation
+- invalid zero or negative billing amounts
+
+P2:
+- search, filtering, sorting and pagination
+- validation messages
+- minor usability defects
+
+Use a single Playwright TypeScript framework for both Web UI and API automation unless the official API collection requires PostQode-native execution.
+
+Do not claim test execution has occurred.
+```
+
+The challenge itself points directly at overlapping appointments, backdated bookings, invalid billing values, unattached lab reports, illegal state transitions, direct URL/API access and cross-module synchronisation failures. ([ATA Events][1])
+
+---
+
+# 6. Phase C: generate test cases and test data
+
+Use **Core Agent or Agent mode**:
+
+```text
+Read:
+- docs/01-system-inventory.md
+- docs/02-user-stories.md
+- docs/03-test-strategy.md
+
+Generate a focused, high-value test suite. Quality is more important than raw quantity.
+
+Create test-cases/test-cases.csv with these columns:
+
+TestCaseID
+UserStoryID
+Module
+Title
+Objective
+Preconditions
+TestDataID
+Steps
+ExpectedResult
+Priority
+TestType
+AutomationCandidate
+ExecutionStatus
+EvidencePath
+DefectID
+Notes
+
+Create 45 to 60 test cases covering:
+
+- patient registration and near-duplicate patients
+- doctor availability
+- valid appointments
+- overlapping appointments
+- same-day and back-to-back boundaries
+- rescheduling
+- cancellation and slot reopening
+- backdated appointments
+- prescription linkage
+- lab-report creation and workflow
+- missing patient or doctor associations
+- IPD admission
+- bed allocation
+- double bed allocation
+- discharge and bed release
+- zero and negative billing amounts
+- duplicate payment attempts
+- paid-bill/dashboard consistency
+- direct URL access
+- unauthenticated access
+- API authentication and authorisation
+- invalid identifiers
+- malformed but safe payloads
+- oversized but non-disruptive field values
+- special characters and Unicode
+- legal and illegal state transitions
+- cross-module consistency
+
+Do not invent fields, buttons, statuses or API endpoints that were not discovered.
+
+Create test-data/ui-test-data.csv with columns:
+
+TestDataID
+Entity
+Field
+Value
+Purpose
+ExpectedValidation
+CleanupRequired
+CleanupMethod
+
+Use isolated record identifiers beginning with:
+T63_20260711_
+
+Include:
+- valid values
+- missing required values
+- boundary lengths
+- Unicode names
+- apostrophes and hyphens
+- near-duplicate patient identifiers
+- invalid dates
+- backdated dates
+- overlapping times
+- zero and negative amounts
+- unusually large but safe amounts
+- invalid state-transition inputs
+
+Create docs/04-traceability-matrix.csv with:
+
+UserStoryID
+TestCaseID
+AutomationScript
+ExecutionResult
+DefectID
+Evidence
+
+Mark every result NOT_RUN until actual execution.
+Update docs/prompt-log.md.
+```
+
+## A sensible case allocation
+
+| Area                     | Approximate cases |
+| ------------------------ | ----------------: |
+| Patient management       |                 7 |
+| Doctors and availability |                 4 |
+| Appointments             |                10 |
+| Prescriptions and labs   |                 8 |
+| IPD and beds             |                 8 |
+| Billing                  |                 7 |
+| Access control           |                 5 |
+| Cross-module workflows   |                 6 |
+| API-specific validation  |                 8 |
+
+That produces roughly **55 to 60 strong cases**, not a landfill of 300 cloned rows.
+
+---
+
+# 7. Phase D: execute exploratory UI tests in controlled batches
+
+Do not ask Web Agent to execute all modules in one marathon. Run one module at a time.
+
+Example for appointments:
+
+```text
+Use Web Agent to execute only the appointment test cases listed in test-cases/test-cases.csv.
+
+Rules:
+- Execute no more than 8 related test cases in this session.
+- Use records beginning with T63_20260711_APT_.
+- Record every created record ID.
+- Do not edit or delete records belonging to other teams.
+- Do not submit real contact information.
+- Do not test destructive concurrency or high-volume requests.
+- Take screenshots for failures and important state changes.
+- Before recording a defect, repeat the failing case once from a clean starting state.
+- Distinguish application defects from test-data errors, permission restrictions and automation failures.
+- Clean up test records when safe and when cleanup will not remove defect evidence.
+
+For every case update:
+- ExecutionStatus
+- actual result in Notes
+- EvidencePath
+- DefectID when applicable
+
+Write a session summary to docs/05-execution-summary.md.
+```
+
+Repeat the same pattern for:
+
+```text
+Patients
+Appointments
+Labs and prescriptions
+IPD and beds
+Billing
+Cross-module consistency
+Access control
+```
+
+---
+
+# 8. Phase E: generate the Web UI automation framework
+
+Use **Agent mode**:
+
+```text
+Build a maintainable Playwright TypeScript automation framework based on the verified application and executed test cases.
+
+Use PostQode to propose and execute all setup commands. Show each command for approval before running it.
+
+Create:
+
+package.json
+playwright.config.ts
+pages/LoginPage.ts
+pages/PatientPage.ts
+pages/AppointmentPage.ts
+pages/LabPage.ts
+pages/AdmissionPage.ts
+pages/BedManagementPage.ts
+pages/BillingPage.ts
+fixtures/auth.fixture.ts
+fixtures/testData.fixture.ts
+utils/dataFactory.ts
+utils/evidence.ts
+tests/ui/login.spec.ts
+tests/ui/patient.spec.ts
+tests/ui/appointment.spec.ts
+tests/ui/lab.spec.ts
+tests/ui/ipd-bed.spec.ts
+tests/ui/billing.spec.ts
+tests/ui/cross-module.spec.ts
+
+Framework rules:
+- Use @playwright/test.
+- Read URL and credentials from environment variables.
+- Never hard-code secrets.
+- Use role-based, label-based or test-id locators where available.
+- Avoid brittle generated CSS chains and nth-child selectors.
+- Use Page Object Model only where it removes duplication.
+- Keep assertions inside test cases.
+- Use deterministic test data prefixed T63_20260711_.
+- Run tests serially where records share application state.
+- Do not enable uncontrolled parallel execution against the shared environment.
+- Capture screenshots only on failure.
+- Retain trace and video on failure.
+- Generate HTML and JUnit reports.
+- Save UI reports under reports/ui.
+- Associate automated test titles with the corresponding TestCaseID.
+- Add cleanup where it is safe.
+- Never delete pre-existing records.
+
+First automate only the P0 smoke paths:
+1. login
+2. register patient
+3. book appointment
+4. detect overlapping appointment handling
+5. cancel appointment and verify slot state
+6. admit patient and allocate bed
+7. discharge patient and verify bed release
+8. create bill and verify payment/dashboard state
+
+Run the smoke tests in headed Chromium.
+Fix automation defects without changing the intended business assertions.
+Update the traceability matrix with script paths and results.
+```
+
+PostQode Web Agent explicitly supports generating Playwright scripts and frameworks from browser actions. ([PostQode Docs][5])
+
+Playwright is the right framework here because one Playwright Test project can execute browser tests and API tests through its built-in `request` fixture, while also producing HTML reports and failure traces. ([Playwright][6])
+
+The likely setup commands proposed by PostQode will resemble:
+
+```powershell
+npm init -y
+npm install --save-dev @playwright/test dotenv
+npx playwright install chromium
+npx playwright test
+npx playwright show-report
+```
+
+Approve them **inside PostQode**, rather than independently building the framework elsewhere. PostQode's normal workflow displays exact terminal commands and file diffs for approval. ([PostQode Docs][7])
+
+---
+
+# 9. Phase F: API automation
+
+Once the official collection is received, switch to **API Agent**.
+
+## Import prompt
+
+```text
+Import the official Team 63 hospital API collection into this workspace.
+
+Do not infer or invent undocumented endpoints.
+
+Analyse:
+- base URLs
+- authentication
+- environment variables
+- modules
+- request dependencies
+- state-transition endpoints
+- entity identifiers
+- cleanup endpoints
+- response schemas
+
+Create an API inventory in docs/06-api-inventory.md.
+
+Mask tokens, passwords, cookies and patient data in all logs and reports.
+```
+
+## Test-generation prompt
+
+```text
+Using the imported official API collection, create API test suites for:
+
+1. authentication
+2. patients
+3. doctors
+4. appointments
+5. prescriptions
+6. lab reports
+7. admissions
+8. beds
+9. billing
+10. cross-module workflows
+
+For each endpoint generate:
+- valid request
+- missing required field
+- invalid type
+- invalid identifier
+- unauthenticated request
+- unauthorised request where test roles permit
+- boundary values
+- safe special-character values
+- state-transition validation
+- response schema assertions
+- business-rule assertions
+- cleanup logic
+
+Create CSV datasets under test-data/api-test-data.csv.
+
+Add pre-request authentication scripts where required.
+Extract created identifiers for dependent requests.
+Use post-request cleanup where safe.
+
+Do not perform:
+- denial-of-service testing
+- high-volume load testing
+- destructive mass deletion
+- exploit payload execution
+- testing outside the authorised application scope
+```
+
+## End-to-end API workflow prompt
+
+```text
+Create and execute these multi-request API workflows using only documented endpoints:
+
+API-E2E-001:
+authenticate
+create patient
+create appointment
+retrieve appointment
+cancel appointment
+verify final state
+cleanup
+
+API-E2E-002:
+authenticate
+create or select test patient
+admit patient
+allocate bed
+retrieve bed state
+discharge patient
+verify bed is available
+cleanup
+
+API-E2E-003:
+authenticate
+create bill
+attempt invalid zero or negative amount
+create valid amount
+mark bill paid where authorised
+retrieve billing summary
+verify totals and state
+cleanup
+
+API-E2E-004:
+authenticate
+create patient
+create lab order or report using the documented workflow
+attempt an illegal state transition
+complete the legal transition
+verify patient linkage
+cleanup
+
+Generate execution reports under reports/api.
+Update the test-case CSV and traceability matrix with actual results.
+```
+
+PostQode API Agent supports CSV datasets, authentication scripts, variable extraction, chained requests, assertions and multi-request automation. ([PostQode Docs][2])
+
+---
+
+# 10. Defects and enhancements
+
+Paste this after each execution batch:
+
+```text
+Review the latest execution results, screenshots, traces, console logs and API responses.
+
+Create or update defects/defects.csv with:
+
+DefectID
+UserStoryID
+TestCaseID
+Module
+Title
+Description
+Environment
+Preconditions
+StepsToReproduce
+ExpectedResult
+ActualResult
+Severity
+Priority
+Reproducibility
+Evidence
+AffectedRecords
+Workaround
+RootCauseHypothesis
+Status
+
+Rules:
+- Record only reproduced application defects.
+- Do not classify an automation selector failure as an application defect.
+- Do not classify insufficient permissions as a defect unless the expected role should have access.
+- Do not state a root cause as fact unless proven.
+- Separate observed evidence from hypothesis.
+- Link every defect to at least one user story and test case.
+- Mask all secrets and personal information.
+
+Severity:
+S1 Critical:
+data exposure, financial corruption, unauthorised sensitive access, unusable core workflow
+
+S2 High:
+cross-module inconsistency, double bed allocation, invalid billing state, broken patient linkage
+
+S3 Medium:
+validation or workflow defect with a practical workaround
+
+S4 Low:
+cosmetic, wording or minor usability issue
+```
+
+For enhancements:
+
+```text
+Create or update defects/enhancements.csv with:
+
+EnhancementID
+Module
+Title
+CurrentBehaviour
+SuggestedBehaviour
+UserBenefit
+BusinessImpact
+Priority
+Evidence
+RelatedUserStory
+
+Do not mix enhancements with defects.
+
+Examples of enhancement categories:
+- clearer validation
+- confirmation before irreversible transitions
+- better patient duplicate warning
+- audit trail visibility
+- clearer bed occupancy indicators
+- billing reconciliation visibility
+- improved search and filters
+- accessibility and keyboard navigation
+```
+
+---
+
+# 11. The highest-yield bugs to hunt first
+
+| Priority | Flow                | Failure to seek                                         |
+| -------- | ------------------- | ------------------------------------------------------- |
+| 1        | Appointment overlap | Same patient or doctor booked into conflicting slots    |
+| 2        | Cancellation        | Slot remains blocked after cancellation                 |
+| 3        | Discharge           | Bed remains occupied after patient discharge            |
+| 4        | Bed allocation      | One bed assigned to two active admissions               |
+| 5        | Billing             | Zero, negative or duplicate payment accepted            |
+| 6        | Dashboard           | Revenue or occupancy summary disagrees with records     |
+| 7        | Lab                 | Report saved without valid patient or doctor            |
+| 8        | State transition    | Completed/cancelled/discharged state reversed illegally |
+| 9        | Duplicate patient   | Near-identical patient accepted without warning         |
+| 10       | Access control      | Hidden page or API accessible through direct route      |
+
+These are not random guesses. They come directly from the competition's stated risk areas and cross-module design. ([ATA Events][1])
+
+---
+
+# 12. Final PostQode audit prompt
+
+When the testing is complete, run this in **Plan or Agent mode**:
+
+```text
+Perform a final submission audit using every project artifact.
+
+Verify:
+
+1. Every user story has at least one test case.
+2. Every executed test has an actual result.
+3. Every automated test maps to a TestCaseID.
+4. Every defect maps to a UserStoryID and TestCaseID.
+5. Every defect has reproducible steps, expected result, actual result, severity and evidence.
+6. UI and API reports are present.
+7. No result is marked passed without execution evidence.
+8. No invented API endpoint, field, role or business rule remains.
+9. No username, password, token, cookie or authenticated storage state appears in submitted files.
+10. Defects and enhancements are separated.
+11. Test-data cleanup and remaining test records are documented.
+12. README contains exact setup and execution instructions.
+13. prompt-log.md records the meaningful PostQode prompts and refinements.
+14. The traceability matrix contains no orphan IDs.
+15. The final package contains no node_modules, .env or temporary browser profile.
+
+Create docs/07-submission-summary.md containing:
+- scope tested
+- environment
+- coverage summary
+- execution summary
+- defects by severity
+- automation summary
+- important risks
+- limitations
+- exact artifact list
+
+Do not manufacture missing evidence. Mark missing items clearly.
+```
+
+---
+
+# Submission package
+
+Your final ZIP should resemble:
+
+```text
+team63-hospital-qa/
+├── README.md
+├── docs/
+│   ├── 01-system-inventory.md
+│   ├── 02-user-stories.md
+│   ├── 03-test-strategy.md
+│   ├── 04-traceability-matrix.csv
+│   ├── 05-execution-summary.md
+│   ├── 06-api-inventory.md
+│   ├── 07-submission-summary.md
+│   └── prompt-log.md
+├── test-cases/
+│   └── test-cases.csv
+├── test-data/
+├── tests/
+├── pages/
+├── fixtures/
+├── utils/
+├── defects/
+│   ├── defects.csv
+│   └── enhancements.csv
+├── reports/
+│   ├── ui/
+│   └── api/
+└── evidence/
+```
+
+The very first move now is: **open the empty workspace, configure Browser Connection, switch to Web Agent and run the read-only discovery prompt**. That gives every later artifact a factual spine instead of AI-flavoured fog. 🔬
+
+[1]: https://ataevents.org/ata-ai-test-hackathon/ "ATA AI Test Hackathon"
+[2]: https://docs.postqode.ai/api-agent/what-is-api-agent "API Agent - Automated Testing and API Management | PostQode Docs"
+[3]: https://docs.postqode.ai/Web-Agent/browser-settings "Configuring Browser Settings | PostQode Docs"
+[4]: https://docs.postqode.ai/Core-Agent/test-case-generation "Automated Test Case Generation | PostQode Docs"
+[5]: https://docs.postqode.ai/Web-Agent/what-is-web-agent "Web Agent Overview | PostQode Docs"
+[6]: https://playwright.dev/docs/api-testing?utm_source=chatgpt.com "API testing"
+[7]: https://docs.postqode.ai/getting-started/your-first-task "Starting Your First Task with PostQode | PostQode Docs"
